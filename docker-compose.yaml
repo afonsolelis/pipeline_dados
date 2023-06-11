@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  hadoop:
+    image: sequenceiq/hadoop-docker:2.7.1
+    container_name: hadoop
+    ports:
+      - "50070:50070" # Porta da interface do usuário do Hadoop
+      - "8088:8088"   # Porta do ResourceManager do Hadoop
+
+  spark:
+    image: bitnami/spark:3.1.1
+    container_name: spark
+    ports:
+      - "4040:4040"   # Porta da interface do usuário do Spark
+    environment:
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_APPLICATION_PYTHON_LOCATION=/opt/spark/examples/src/main/python/pi.py
+
+  spark-warehouse:
+    image: bitnami/spark:3.1.1
+    container_name: spark-warehouse
+    volumes:
+      - ./spark-warehouse:/opt/spark/warehouse
+
+  airflow:
+    image: apache/airflow:2.2.0
+    container_name: airflow
+    ports:
+      - "8080:8080"   # Porta da interface do usuário do Airflow
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+
+  spark-master:
+    image: bitnami/spark:3.1.1
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+
+  spark-worker:
+    image: bitnami/spark:3.1.1
+    container_name: spark-worker
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
